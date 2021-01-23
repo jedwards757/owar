@@ -5,12 +5,27 @@ require(RMySQL)
 
 mydb = dbConnect(MySQL(), user=user, password=password, dbname='owl', host=host)
 
-rs = dbSendQuery(mydb, "SELECT stage, match_id, map_id, game_number, map_name, team_one_name, team_two_name, match_winner, map_winner, winning_team_final_map_score, losing_team_final_map_score, attacker FROM owl.match_map_stats WHERE stage != 'OWL APAC All-Stars' OR stage != 'OWL North America All-Stars'")
+rs = dbSendQuery(mydb, "SELECT 
+    stage,
+    match_id,
+    map_id,
+    game_number,
+    map_name,
+    team_one_name,
+    team_two_name,
+    match_winner,
+    map_winner,
+    patch,
+    winning_team_final_map_score,
+    losing_team_final_map_score,
+    attacker
+FROM
+    owl.match_map_stats")
 match_map_stats = dbFetch(rs,n=-1)
 dbClearResult(rs)
 
 results_by_map = match_map_stats %>%
-  group_by(stage, match_id, map_id) %>%
+  group_by(stage, match_id, map_id, patch) %>%
   summarize(team_one_name = first(team_one_name),
             team_two_name = first(team_two_name),
             match_winner = first(match_winner),
@@ -21,7 +36,7 @@ results_by_map = match_map_stats %>%
             first_attacker = first(attacker))
             
 results_by_match = results_by_map %>%
-  group_by(stage, match_id) %>%
+  group_by(stage, match_id, patch) %>%
   summarize(team_one_name = first(team_one_name),
             team_two_name = first(team_two_name),
             match_winner = first(match_winner),

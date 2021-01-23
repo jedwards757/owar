@@ -3,6 +3,8 @@ require(tidyverse)
 require(RSelenium)
 require(rvest)
 require(RMySQL)
+require(lubridate)
+require(fuzzyjoin)
 
 mydb = dbConnect(MySQL(), user=user, password=password, dbname='owl', host=host)
 
@@ -47,7 +49,28 @@ dbWriteTable(mydb, "match_map_stats", read_csv('data/csvs/match_map_stats.csv',c
                                                                                                 defender_control_perecent = col_double(), 
                                                                                                 attacker_round_end_score = col_double(), 
                                                                                                 defender_round_end_score = col_double())) %>%
-               mutate(map_id = paste0(match_id,'_',game_number)) %>%
+               mutate(map_id = paste0(match_id,'_',game_number),
+                      stage = case_when(stage == 'Overwatch League - Stage 1'~'2018 Stage 1 Regular Season',
+                                        stage == 'Overwatch League - Stage 1 - Title Matches'~'2018 Stage 1 Title Matches',
+                                        stage == 'Overwatch League - Stage 2'~'2018 Stage 2 Regular Season',
+                                        stage == 'Overwatch League - Stage 2 Title Matches'~'2018 Stage 2 Title Matches',
+                                        stage == 'Overwatch League - Stage 3'~'2018 Stage 3 Regular Season',
+                                        stage == 'Overwatch League - Stage 3 Title Matches'~'2018 Stage 3 Title Matches',
+                                        stage == 'Overwatch League - Stage 4'~'2018 Stage 4 Regular Season',
+                                        stage == 'Overwatch League - Stage 4 Title Matches'~'2018 Stage 4 Title Matches',
+                                        stage == 'Overwatch League Inaugural Season Championship'~'2018 Playoffs',
+                                        stage == 'Overwatch League Stage 1'~'2019 Stage 1 Regular Season',
+                                        stage == 'Overwatch League Stage 1 Title Matches'~'2019 Stage 1 Title Matches',
+                                        stage == 'Overwatch League Stage 2'~'2019 Stage 2 Regular Season',
+                                        stage == 'Overwatch League Stage 2 Title Matches'~'2019 Stage 2 Title Matches',
+                                        stage == 'Overwatch League Stage 3'~'2019 Stage 3 Regular Season',
+                                        stage == 'Overwatch League Stage 3 Title Matches'~'2019 Stage 3 Title Matches',
+                                        stage == 'Overwatch League Stage 4'~'2019 Stage 4 Regular Season',
+                                        stage == 'Overwatch League 2019 Post-Season'~'2019 Playoffs',
+                                        stage == 'OWL 2020 Regular Season'~'2020 Regular Season and Playoffs',
+                                        T~stage)) %>%
+               mutate(round_start_time = case_when(match_id == '21352' & map_round == 1~ymd_hms('2019-04-27 16:55:00'),
+                                                   T~round_start_time)) %>%
                filter(!(stage %in% c('OWL APAC All-Stars','OWL North America All-Stars'))), overwrite = T, append = F, row.names = F)
 
 csvs = list.files(path='data/csvs/',pattern="*.csv")
@@ -69,7 +92,26 @@ dbWriteTable(mydb, "player_stats",read_csv('data/csvs/phs_2020_2.csv',col_types 
                       hero = hero_name) %>%
                mutate(hero = case_when(hero == 'Lúcio'~'Lucio',
                                        hero == 'Torbj'~'Torbjorn',
-                                       T~hero)) %>%
+                                       T~hero),
+                      stage = case_when(stage == 'Overwatch League - Stage 1'~'2018 Stage 1 Regular Season',
+                                        stage == 'Overwatch League - Stage 1 - Title Matches'~'2018 Stage 1 Title Matches',
+                                        stage == 'Overwatch League - Stage 2'~'2018 Stage 2 Regular Season',
+                                        stage == 'Overwatch League - Stage 2 Title Matches'~'2018 Stage 2 Title Matches',
+                                        stage == 'Overwatch League - Stage 3'~'2018 Stage 3 Regular Season',
+                                        stage == 'Overwatch League - Stage 3 Title Matches'~'2018 Stage 3 Title Matches',
+                                        stage == 'Overwatch League - Stage 4'~'2018 Stage 4 Regular Season',
+                                        stage == 'Overwatch League - Stage 4 Title Matches'~'2018 Stage 4 Title Matches',
+                                        stage == 'Overwatch League Inaugural Season Championship'~'2018 Playoffs',
+                                        stage == 'Overwatch League Stage 1'~'2019 Stage 1 Regular Season',
+                                        stage == 'Overwatch League Stage 1 Title Matches'~'2019 Stage 1 Title Matches',
+                                        stage == 'Overwatch League Stage 2'~'2019 Stage 2 Regular Season',
+                                        stage == 'Overwatch League Stage 2 Title Matches'~'2019 Stage 2 Title Matches',
+                                        stage == 'Overwatch League Stage 3'~'2019 Stage 3 Regular Season',
+                                        stage == 'Overwatch League Stage 3 Title Matches'~'2019 Stage 3 Title Matches',
+                                        stage == 'Overwatch League Stage 4'~'2019 Stage 4 Regular Season',
+                                        stage == 'Overwatch League 2019 Post-Season'~'2019 Playoffs',
+                                        stage == 'OWL 2020 Regular Season'~'2020 Regular Season and Playoffs',
+                                        T~stage)) %>%
                group_by(match_id) %>%
                arrange(start_time) %>%
                mutate(map_id = paste0(match_id,'_',as.numeric(factor(start_time)))) %>%
@@ -86,7 +128,26 @@ for(csv in csvs){
                    rename(start_time = pelstart_time) %>%
                    mutate(hero = case_when(hero == 'Lúcio'~'Lucio',
                                            hero == 'Torbj'~'Torbjorn',
-                                           T~hero)) %>%
+                                           T~hero),
+                          stage = case_when(stage == 'Overwatch League - Stage 1'~'2018 Stage 1 Regular Season',
+                                            stage == 'Overwatch League - Stage 1 - Title Matches'~'2018 Stage 1 Title Matches',
+                                            stage == 'Overwatch League - Stage 2'~'2018 Stage 2 Regular Season',
+                                            stage == 'Overwatch League - Stage 2 Title Matches'~'2018 Stage 2 Title Matches',
+                                            stage == 'Overwatch League - Stage 3'~'2018 Stage 3 Regular Season',
+                                            stage == 'Overwatch League - Stage 3 Title Matches'~'2018 Stage 3 Title Matches',
+                                            stage == 'Overwatch League - Stage 4'~'2018 Stage 4 Regular Season',
+                                            stage == 'Overwatch League - Stage 4 Title Matches'~'2018 Stage 4 Title Matches',
+                                            stage == 'Overwatch League Inaugural Season Championship'~'2018 Playoffs',
+                                            stage == 'Overwatch League Stage 1'~'2019 Stage 1 Regular Season',
+                                            stage == 'Overwatch League Stage 1 Title Matches'~'2019 Stage 1 Title Matches',
+                                            stage == 'Overwatch League Stage 2'~'2019 Stage 2 Regular Season',
+                                            stage == 'Overwatch League Stage 2 Title Matches'~'2019 Stage 2 Title Matches',
+                                            stage == 'Overwatch League Stage 3'~'2019 Stage 3 Regular Season',
+                                            stage == 'Overwatch League Stage 3 Title Matches'~'2019 Stage 3 Title Matches',
+                                            stage == 'Overwatch League Stage 4'~'2019 Stage 4 Regular Season',
+                                            stage == 'Overwatch League 2019 Post-Season'~'2019 Playoffs',
+                                            stage == 'OWL 2020 Regular Season'~'2020 Regular Season and Playoffs',
+                                            T~stage)) %>%
                    group_by(match_id) %>%
                    arrange(start_time) %>%
                    mutate(map_id = paste0(match_id,'_',as.numeric(factor(start_time)))) %>%
@@ -100,7 +161,26 @@ for(csv in csvs){
                                                                     stat_amount = col_double())) %>%
                    mutate(hero = case_when(hero == 'Lúcio'~'Lucio',
                                            hero == 'Torbj'~'Torbjorn',
-                                           T~hero)) %>%
+                                           T~hero),
+                          stage = case_when(stage == 'Overwatch League - Stage 1'~'2018 Stage 1 Regular Season',
+                                            stage == 'Overwatch League - Stage 1 - Title Matches'~'2018 Stage 1 Title Matches',
+                                            stage == 'Overwatch League - Stage 2'~'2018 Stage 2 Regular Season',
+                                            stage == 'Overwatch League - Stage 2 Title Matches'~'2018 Stage 2 Title Matches',
+                                            stage == 'Overwatch League - Stage 3'~'2018 Stage 3 Regular Season',
+                                            stage == 'Overwatch League - Stage 3 Title Matches'~'2018 Stage 3 Title Matches',
+                                            stage == 'Overwatch League - Stage 4'~'2018 Stage 4 Regular Season',
+                                            stage == 'Overwatch League - Stage 4 Title Matches'~'2018 Stage 4 Title Matches',
+                                            stage == 'Overwatch League Inaugural Season Championship'~'2018 Playoffs',
+                                            stage == 'Overwatch League Stage 1'~'2019 Stage 1 Regular Season',
+                                            stage == 'Overwatch League Stage 1 Title Matches'~'2019 Stage 1 Title Matches',
+                                            stage == 'Overwatch League Stage 2'~'2019 Stage 2 Regular Season',
+                                            stage == 'Overwatch League Stage 2 Title Matches'~'2019 Stage 2 Title Matches',
+                                            stage == 'Overwatch League Stage 3'~'2019 Stage 3 Regular Season',
+                                            stage == 'Overwatch League Stage 3 Title Matches'~'2019 Stage 3 Title Matches',
+                                            stage == 'Overwatch League Stage 4'~'2019 Stage 4 Regular Season',
+                                            stage == 'Overwatch League 2019 Post-Season'~'2019 Playoffs',
+                                            stage == 'OWL 2020 Regular Season'~'2020 Regular Season and Playoffs',
+                                            T~stage)) %>%
                    group_by(match_id) %>%
                    arrange(start_time) %>%
                    mutate(map_id = paste0(match_id,'_',as.numeric(factor(start_time)))) %>%
@@ -119,7 +199,26 @@ for(csv in csvs){
                           hero = hero_name) %>%
                    mutate(hero = case_when(hero == 'Lúcio'~'Lucio',
                                            hero == 'Torbj'~'Torbjorn',
-                                           T~hero)) %>%
+                                           T~hero),
+                          stage = case_when(stage == 'Overwatch League - Stage 1'~'2018 Stage 1 Regular Season',
+                                            stage == 'Overwatch League - Stage 1 - Title Matches'~'2018 Stage 1 Title Matches',
+                                            stage == 'Overwatch League - Stage 2'~'2018 Stage 2 Regular Season',
+                                            stage == 'Overwatch League - Stage 2 Title Matches'~'2018 Stage 2 Title Matches',
+                                            stage == 'Overwatch League - Stage 3'~'2018 Stage 3 Regular Season',
+                                            stage == 'Overwatch League - Stage 3 Title Matches'~'2018 Stage 3 Title Matches',
+                                            stage == 'Overwatch League - Stage 4'~'2018 Stage 4 Regular Season',
+                                            stage == 'Overwatch League - Stage 4 Title Matches'~'2018 Stage 4 Title Matches',
+                                            stage == 'Overwatch League Inaugural Season Championship'~'2018 Playoffs',
+                                            stage == 'Overwatch League Stage 1'~'2019 Stage 1 Regular Season',
+                                            stage == 'Overwatch League Stage 1 Title Matches'~'2019 Stage 1 Title Matches',
+                                            stage == 'Overwatch League Stage 2'~'2019 Stage 2 Regular Season',
+                                            stage == 'Overwatch League Stage 2 Title Matches'~'2019 Stage 2 Title Matches',
+                                            stage == 'Overwatch League Stage 3'~'2019 Stage 3 Regular Season',
+                                            stage == 'Overwatch League Stage 3 Title Matches'~'2019 Stage 3 Title Matches',
+                                            stage == 'Overwatch League Stage 4'~'2019 Stage 4 Regular Season',
+                                            stage == 'Overwatch League 2019 Post-Season'~'2019 Playoffs',
+                                            stage == 'OWL 2020 Regular Season'~'2020 Regular Season and Playoffs',
+                                            T~stage)) %>%
                    group_by(match_id) %>%
                    arrange(start_time) %>%
                    mutate(map_id = paste0(match_id,'_',as.numeric(factor(start_time)))) %>%
@@ -133,7 +232,26 @@ for(csv in csvs){
                                                                     stat_amount = col_double())) %>%
                    mutate(hero = case_when(hero == 'Lúcio'~'Lucio',
                                            hero == 'Torbj'~'Torbjorn',
-                                           T~hero)) %>%
+                                           T~hero),
+                          stage = case_when(stage == 'Overwatch League - Stage 1'~'2018 Stage 1 Regular Season',
+                                            stage == 'Overwatch League - Stage 1 - Title Matches'~'2018 Stage 1 Title Matches',
+                                            stage == 'Overwatch League - Stage 2'~'2018 Stage 2 Regular Season',
+                                            stage == 'Overwatch League - Stage 2 Title Matches'~'2018 Stage 2 Title Matches',
+                                            stage == 'Overwatch League - Stage 3'~'2018 Stage 3 Regular Season',
+                                            stage == 'Overwatch League - Stage 3 Title Matches'~'2018 Stage 3 Title Matches',
+                                            stage == 'Overwatch League - Stage 4'~'2018 Stage 4 Regular Season',
+                                            stage == 'Overwatch League - Stage 4 Title Matches'~'2018 Stage 4 Title Matches',
+                                            stage == 'Overwatch League Inaugural Season Championship'~'2018 Playoffs',
+                                            stage == 'Overwatch League Stage 1'~'2019 Stage 1 Regular Season',
+                                            stage == 'Overwatch League Stage 1 Title Matches'~'2019 Stage 1 Title Matches',
+                                            stage == 'Overwatch League Stage 2'~'2019 Stage 2 Regular Season',
+                                            stage == 'Overwatch League Stage 2 Title Matches'~'2019 Stage 2 Title Matches',
+                                            stage == 'Overwatch League Stage 3'~'2019 Stage 3 Regular Season',
+                                            stage == 'Overwatch League Stage 3 Title Matches'~'2019 Stage 3 Title Matches',
+                                            stage == 'Overwatch League Stage 4'~'2019 Stage 4 Regular Season',
+                                            stage == 'Overwatch League 2019 Post-Season'~'2019 Playoffs',
+                                            stage == 'OWL 2020 Regular Season'~'2020 Regular Season and Playoffs',
+                                            T~stage)) %>%
                    group_by(match_id) %>%
                    arrange(start_time) %>%
                    mutate(map_id = paste0(match_id,'_',as.numeric(factor(start_time)))) %>%
@@ -141,4 +259,28 @@ for(csv in csvs){
   }
 }
 gc()
+
+dbWriteTable(mydb, 'patch_map',read_csv('patch_map.csv'),overwrite = T,append = F,row.names = F)
+
+rs = dbSendQuery(mydb, "SELECT * FROM owl.patch_map;")
+patch_map = dbFetch(rs,n=-1)
+dbClearResult(rs)
+
+patch_map = patch_map %>%
+  mutate(`Start Date` = mdy(`Start Date`),
+         `End Date` = mdy(`End Date`))
+
+rs = dbSendQuery(mydb, "SELECT * FROM owl.match_map_stats")
+match_map_stats = dbFetch(rs,n=-1)
+dbClearResult(rs)
+
+match_map_stats = match_map_stats %>%
+  mutate(round_start_time = ymd_hms(round_start_time)) %>%
+  fuzzy_left_join(patch_map,
+                  by=c('round_start_time' = 'Start Date',
+                       'round_start_time' = 'End Date'),
+                  match_fun=list(`>=`,`<=`))
+
+dbWriteTable(mydb, 'match_map_stats', match_map_stats, overwrite = T, append = F, row.names = F)
+
 dbDisconnect(mydb)
