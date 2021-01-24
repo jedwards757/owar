@@ -38,21 +38,21 @@ rs = dbSendQuery(mydb,"SELECT
     owl.player_stats.team,
     stat_name,
     stat_amount,
-    role
+    subrole
 FROM
     owl.player_stats
         INNER JOIN
-    owl.player_stats_roles ON owl.player_stats_roles.map_id = owl.player_stats.map_id
-        AND owl.player_stats_roles.player = owl.player_stats.player
+    owl.player_stats_subroles ON owl.player_stats_subroles.map_id = owl.player_stats.map_id
+        AND owl.player_stats_subroles.player = owl.player_stats.player
 WHERE
-    hero = 'All Heroes'
+    owl.player_stats.hero = 'All Heroes'
         AND stat_name IN ('Hero Damage Done' , 'Deaths',
         'Eliminations',
         'Final Blows',
         'Solo Kills',
+        'Assists',
         'Defensive Assists',
-        'Offensive Assists',
-        'Damage Blocked',
+        'Healing Done',
         'Time Played')")
 team_stats = dbFetch(rs,n=-1)
 dbClearResult(rs)
@@ -62,13 +62,13 @@ team_stats = team_stats %>%
   pivot_wider(names_from = stat_name, values_from = stat_amount, values_fn = {sum}) %>%
   mutate(across(everything(),~replace_na(.x,0)),
          assisted_kills = final_blows - solo_kills) %>%
-  group_by(map_id, map_type, team, role) %>%
+  group_by(map_id, map_type, team, subrole) %>%
   summarize(across(where(is.numeric),sum),
             players_in_role = n()) %>%
   mutate(across(!starts_with('players_in_role') & where(is.numeric),~{.x / players_in_role}),
          across(!starts_with('time_played') & where(is.numeric),~{.x * 600 / time_played})) %>%
   select(-c(time_played, players_in_role)) %>%
-  pivot_wider(names_from = role, values_from = where(is.numeric)) %>%
+  pivot_wider(names_from = subrole, values_from = where(is.numeric)) %>%
   mutate(across(everything(),~replace_na(.x,0)))
 
 rs = dbSendQuery(mydb,"SELECT stage, map_id, patch, team_one_name, team_two_name, map_winner, team_one_map_score, team_two_map_score, first_attacker from owl.results_by_map")
@@ -100,12 +100,19 @@ coef_over_time = function(mycoef){
   
   for(myyear in c(2018:2020)){
     stage_model = glm(win ~ map_type:first_attacker_flg + deaths_damage +
-                  deaths_support +
-                  deaths_tank +
-                  final_blows_damage +
-                  final_blows_support +
-                  final_blows_tank +
-                  healing_done_support + 0,
+                        deaths_hitscan +
+                        deaths_main_support +
+                        deaths_main_tank +
+                        deaths_off_support +
+                        deaths_off_tank +
+                        deaths_projectile +
+                        final_blows_hitscan +
+                        final_blows_main_support +
+                        final_blows_main_tank +
+                        final_blows_off_support +
+                        final_blows_off_tank +
+                        final_blows_projectile +
+                    0,
                 data = main_df %>%
                   filter(str_detect(stage,as.character(myyear))),
                 family = binomial())
@@ -133,13 +140,21 @@ coef_over_time = function(mycoef){
 #             family = binomial())
 
 model = glm(win ~ map_type:first_attacker_flg + 
-                deaths_damage:year+ 
-                deaths_support:year + 
-                deaths_tank:year + 
-                final_blows_damage:year + 
-                final_blows_support:year + 
-                final_blows_tank:year +
-                0,data = main_df,
-              family = binomial())
+              deaths_hitscan:year +
+              deaths_main_support:year +
+              deaths_main_tank:year +
+              deaths_off_support:year +
+              deaths_off_tank:year +
+              deaths_projectile:year +
+              final_blows_hitscan:year +
+              final_blows_main_support:year +
+              final_blows_main_tank:year +
+              final_blows_off_support:year +
+              final_blows_off_tank:year +
+              final_blows_projectile:year +
+              0,data = main_df,
+            family = binomial())
+
+saveRDS(model,'models/stat_model.RDS')
 
 dbDisconnect(mydb)
