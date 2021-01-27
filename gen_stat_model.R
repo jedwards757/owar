@@ -32,7 +32,7 @@ mydb = dbConnect(MySQL(), user=user, password=password, dbname='owl', host=host)
 #          weapon_accuracy = weapon_accuracy / 6)
 
 rs = dbSendQuery(mydb,"SELECT 
-    map_type,
+    owl.player_stats.map_type,
     owl.player_stats.player,
     owl.player_stats.map_id,
     owl.player_stats.team,
@@ -100,18 +100,16 @@ coef_over_time = function(mycoef){
   
   for(myyear in c(2018:2020)){
     stage_model = glm(win ~ map_type:first_attacker_flg + deaths_damage +
-                        deaths_hitscan +
+                        deaths_DPS +
                         deaths_main_support +
                         deaths_main_tank +
                         deaths_off_support +
                         deaths_off_tank +
-                        deaths_projectile +
-                        final_blows_hitscan +
+                        final_blows_DPS +
                         final_blows_main_support +
                         final_blows_main_tank +
                         final_blows_off_support +
                         final_blows_off_tank +
-                        final_blows_projectile +
                     0,
                 data = main_df %>%
                   filter(str_detect(stage,as.character(myyear))),
@@ -131,18 +129,16 @@ coef_over_time = function(mycoef){
 }
 
 model = glm(win ~ map_type:first_attacker_flg + 
-              deaths_hitscan:year +
+              deaths_DPS:year +
               deaths_main_support:year +
               deaths_main_tank:year +
               deaths_off_support:year +
               deaths_off_tank:year +
-              deaths_projectile:year +
-              final_blows_hitscan:year +
+              final_blows_DPS:year +
               final_blows_main_support:year +
               final_blows_main_tank:year +
               final_blows_off_support:year +
               final_blows_off_tank:year +
-              final_blows_projectile:year +
               0,data = main_df,
             family = binomial())
 

@@ -13,7 +13,7 @@ hitscan = c('Ashe','Bastion','McCree','Reaper','Soldier: 76','Sombra','Symmetra'
 projectile = c('Doomfist','Echo','Genji','Hanzo','Junkrat','Mei','Pharah','Torbj')
 
 rs = dbSendQuery(mydb, "SELECT 
-    map_id, player, team, hero, stat_amount
+    map_id, map_type, player, team, hero, stat_amount
 FROM
     owl.player_stats
 WHERE
@@ -28,7 +28,7 @@ dbWriteTable(mydb, 'player_stats_roles',
                                        hero %in% damage~'damage',
                                        hero %in% tank~'tank',
                                        T~NA_character_)) %>%
-               group_by(player, map_id, team, role) %>%
+               group_by(player, map_id, map_type, team, role) %>%
                summarize(time_on_role = sum(stat_amount)) %>%
                arrange(-time_on_role) %>%
                filter(row_number() == 1) %>%
@@ -36,7 +36,7 @@ dbWriteTable(mydb, 'player_stats_roles',
 
 dbWriteTable(mydb,'player_stats_subroles',
              time_on_hero %>%
-               group_by(player, map_id, team, hero) %>%
+               group_by(player, map_id, map_type, team, hero) %>%
                summarize(time_on_hero = sum(stat_amount)) %>%
                arrange(-time_on_hero) %>%
                filter(row_number() == 1) %>%
@@ -50,8 +50,8 @@ dbWriteTable(mydb,'player_stats_subroles',
                            group_by(map_id,team) %>%
                            summarize(heroes = paste(hero,collapse = ', '))) %>%
                arrange(map_id, team, player) %>%
-               mutate(subrole = case_when(hero %in% hitscan~'hitscan',
-                                          hero %in% projectile~'projectile',
+               mutate(subrole = case_when(hero %in% hitscan~'DPS',
+                                          hero %in% projectile~'DPS',
                                           #lucio logic
                                           hero == 'Lucio' & (str_detect(heroes,'Moira') | (str_detect(heroes,'Mercy') & !(str_detect(heroes,'Pharah') | str_detect(heroes,'Echo'))))~'off_support',
                                           hero == 'Lucio' & !(str_detect(heroes,'Moira') | str_detect(heroes,'Mercy') | str_detect(heroes,'Brigitte') | str_detect(heroes,'Zenyatta') | str_detect(heroes,'Ana') | str_detect(heroes,'Baptiste')) ~ 'main_support',
